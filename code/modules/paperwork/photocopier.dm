@@ -35,6 +35,8 @@
 					Стандартизации Nanotrasen."
 	var/info_box_color = "blue"
 	var/ui_theme = "nanotrasen"// Если темы нету, будет взята стандартная НТ тема для интерфейса
+	var/next_use = 0
+	var/use_delay = 15
 
 /obj/machinery/photocopier/syndie
 	name = "Syndicate photocopier"
@@ -74,11 +76,18 @@
 	. = TRUE
 	switch(action)
 		if("copy")
+			if(next_use > world.time)
+				visible_message("<span class='warning'>[src] is busy, try again in a few seconds.</span>")
+				return
+
+			else
+				next_use = world.time + use_delay
+				playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
+
 			if(emag_cooldown > world.time)
 				to_chat(usr, "<span class='warning'>[src] is busy, try again in a few seconds.</span>")
 				return
 
-			playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
 			for(var/i = 0, i < copies, i++)
 				if(toner <= 0)
 					break
@@ -120,7 +129,6 @@
 				GLOB.copier_items_printed++
 				use_power(active_power_usage)
 		if("print_form")
-			playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
 			for(var/i = 0, i < copies, i++)
 				if(toner <= 0)
 					break
@@ -134,6 +142,14 @@
 						message_admins("Photocopier cap of [GLOB.copier_max_items] papers reached, all photocopiers are now disabled. This may be the cause of any lag.")
 						GLOB.copier_items_printed_logged = TRUE
 					break
+
+				if(next_use > world.time)
+					visible_message("<span class='warning'>[src] is busy, try again in a few seconds.</span>")
+					return
+
+				else
+					next_use = world.time + use_delay
+					playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
 
 				if(emag_cooldown > world.time)
 					return
